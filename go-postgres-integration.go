@@ -24,14 +24,14 @@ func main() {
 
   // there be errors
   if err != nil {
-    panic("params are syntaxly wrong == \n" + err)
+    panic(err)
   }
   defer db.Close()
 
   err = db.Ping()
 
   if err != nil {
-    panic("Server is not alive == \n" + err)
+    panic(err)
   }
 
   fmt.Println("Got connected!")
