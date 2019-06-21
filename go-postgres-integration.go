@@ -1,34 +1,63 @@
 package main
 
 import (
-  "os"
-  "database/sql"
-  "fmt"
+	"fmt"
+	"log"
 
-  _ "github.com/lib/pq"
+	"github.com/DamonWright101/go-postgres-integration/http"
+	"github.com/DamonWright101/go-postgres-integration/logic"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-  psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-    os.Getenv("POSTGRES_HOST"), 
-    os.Getenv("POSTGRES_PORT"), 
-    os.Getenv("POSTGRES_USER"), 
-    os.Getenv("POSTGRES_PASSWORD"), 
-    os.Getenv("POSTGRES_DB"))
 
-  db, err := sql.Open("postgres", psqlInfo)
+	TestPostgrest()
 
-  // there be errors
-  if err != nil {
-    panic(err)
-  }
-  defer db.Close()
+	http.Server(8080)
 
-  err = db.Ping()
+}
 
-  if err != nil {
-    panic(err)
-  }
+func TestPostgrest() {
 
-  fmt.Println("Got connected!")
+	// get a single person from db and convert it into person obj
+	data, err := logic.GetRowFromTableByExactMatch("persons", "username", "username003")
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	person, err := logic.BuildPersonFromJson(data)
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	fmt.Printf("people: %+v\n\n", person)
+
+	// get a set of people from db and convert it into slice person obj
+	data, err = logic.GetRowsFromTableByBetweenTwoValues("persons", "username", "username003", "username006")
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+	people, err := logic.BuildPersonSliceFromJson(data)
+
+	fmt.Println("people")
+	for i := range people {
+		fmt.Printf("%d: %+v\n", i, people[i])
+	}
+
+}
+
+func unused() {
+
+	somejson := `{ "id": 3, "email": "test3@email.com", "username": "username3", "fname": "test3", "lname": "test" }`
+	person, err := logic.NewPerson(somejson)
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	data, err := logic.Query("http://localhost:3000/persons?id=eq.4")
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	log.Print(person, data, err)
 }
